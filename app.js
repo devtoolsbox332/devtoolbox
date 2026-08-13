@@ -1,0 +1,1 @@
+// Shared JavaScript placeholder for future tools. Current tools are intentionally client-side only.
