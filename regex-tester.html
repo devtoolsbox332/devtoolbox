@@ -1,2 +1,33 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Regex Tester | DevToolBox</title><meta name="description" content="Test JavaScript regular expressions and inspect every match."><link rel="stylesheet" href="styles.css"></head><body><header class="header"><div class="container nav"><a class="brand" href="index.html"><span class="logo">&lt;/&gt;</span>DevToolBox</a><nav class="navlinks"><a href="index.html">All Tools</a><a href="json-formatter.html">JSON</a><a href="jwt-decoder.html">JWT</a><a href="regex-tester.html">Regex</a></nav></div></header><main class="container tool"><div class="toolhead"><span class="eyebrow">FREE BROWSER TOOL</span><h1>Regex Tester</h1><p>Test JavaScript regular expressions and inspect every match.</p></div><div class="panel"><div class="two"><div><span class="label">Pattern</span><input id="pattern" class="input" placeholder="\b\w+\b"></div><div><span class="label">Flags</span><input id="flags" class="input" value="g"></div></div><span class="label" style="margin-top:15px">Test text</span><textarea id="input" class="small"></textarea><div class="toolbar"><button id="run">Test Regex</button></div><textarea id="output" class="small" readonly></textarea><div id="status" class="status"></div></div></main><footer><div class="container foot"><span>© 2026 DevToolBox · Fast, simple browser tools</span><span><a href="about.html">About</a> · <a href="privacy.html">Privacy</a></span></div></footer><script src="common.js"></script><script>$("#run").onclick=()=>{try{let f=$("#flags").value;if(!f.includes('g'))f+='g';let r=new RegExp($("#pattern").value,f),m=[...$("#input").value.matchAll(r)];$("#output").value=m.map((x,i)=>`${i+1}. "${x[0]}" at index ${x.index}`).join("
-")||'No matches.';status(m.length?`${m.length} match(es) found.`:'No matches.',m.length?'success':'')}catch(e){status(e.message,'error')}};</script></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script>(function(){try{var t=localStorage.getItem('dtb-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Regex Tester | DevToolBox</title><meta name="description" content="Test JavaScript regular expressions and inspect every match."><link rel="stylesheet" href="styles.css"></head><body><header class="header"><div class="container nav"><a class="brand" href="index.html"><span class="logo">&lt;/&gt;</span>DevToolBox</a><button class="navtoggle" id="navtoggle" aria-label="Menu">&#9776;</button><nav class="navlinks" id="navlinks"><a href="index.html">All Tools</a><a href="json-formatter.html">JSON</a><a href="hash-generator.html">Hash</a><a href="regex-tester.html">Regex</a><a href="about.html">About</a></nav><div class="navright"><button class="iconbtn" id="themeToggle" aria-label="Toggle theme" title="Toggle dark mode">&#9680;</button></div></div></header><div class="toolhead"><div><span class="eyebrow">FREE BROWSER TOOL</span><h1>Regex Tester</h1><p>Test JavaScript regular expressions, inspect every match and try replacements.</p></div></div><main class="container tool"><div class="panel"><div class="two"><div><span class="label">Pattern</span><input id="pattern" class="input" placeholder="\b\w+\b"></div><div><span class="label">Flags</span><input id="flags" class="input" value="g"></div></div><span class="label" style="margin-top:15px">Test text</span><textarea id="input" class="small"></textarea><div class="toolbar"><button id="run">Test Regex</button></div><span class="label">Highlighted matches</span><div id="highlight" class="result"></div><div class="two" style="margin-top:12px"><div><span class="label">Replace with (optional)</span><input id="replacement" class="input" placeholder="$1"></div><div><button class="secondary" id="replaceBtn" style="margin-top:19px">Apply replace</button></div></div><textarea id="output" class="small" readonly placeholder="Replacement result appears here"></textarea><div id="status" class="status"></div></div></main><footer><div class="container foot"><span>&copy; 2026 DevToolBox &middot; Fast, simple browser tools</span><span><a href="about.html">About</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="index.html">All tools</a></span></div></footer><script src="common.js"></script><script>
+function build(){
+  let f=$("#flags").value;
+  if(!f.includes("g"))f+="g";
+  return new RegExp($("#pattern").value,f);
+}
+$("#run").onclick=()=>{
+  try{
+    let r=build(),text=$("#input").value,m=[...text.matchAll(r)];
+    if(!m.length){
+      $("#highlight").textContent=escapeHtml(text)||"(empty)";
+      status("No matches.","");
+    }else{
+      let out="",last=0;
+      m.forEach(x=>{
+        out+=escapeHtml(text.slice(last,x.index));
+        out+=`<mark style="background:var(--primary-soft);color:var(--primary);border-radius:4px;padding:0 2px">${escapeHtml(x[0])}</mark>`;
+        last=x.index+x[0].length;
+      });
+      out+=escapeHtml(text.slice(last));
+      $("#highlight").innerHTML=out;
+      status(`${m.length} match(es) found.`,"success");
+    }
+  }catch(e){status(e.message,"error")}
+};
+$("#replaceBtn").onclick=()=>{
+  try{
+    let r=build();
+    $("#output").value=$("#input").value.replace(r,$("#replacement").value);
+    status("Replacement applied.","success");
+  }catch(e){status(e.message,"error")}
+};
+</script></body></html>

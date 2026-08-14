@@ -1,1 +1,30 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JWT Decoder | DevToolBox</title><meta name="description" content="Decode JWT header and payload locally. Signature verification is not performed."><link rel="stylesheet" href="styles.css"></head><body><header class="header"><div class="container nav"><a class="brand" href="index.html"><span class="logo">&lt;/&gt;</span>DevToolBox</a><nav class="navlinks"><a href="index.html">All Tools</a><a href="json-formatter.html">JSON</a><a href="jwt-decoder.html">JWT</a><a href="regex-tester.html">Regex</a></nav></div></header><main class="container tool"><div class="toolhead"><span class="eyebrow">FREE BROWSER TOOL</span><h1>JWT Decoder</h1><p>Decode JWT header and payload locally. Signature verification is not performed.</p></div><div class="panel"><div class="toolbar"><button id="run">Decode JWT</button><button class="secondary" id="sample">Sample</button><button class="secondary" id="clear">Clear</button></div><span class="label">JWT token</span><textarea id="input" class="small"></textarea><div class="editor-grid" style="margin-top:15px"><div><span class="label">Header</span><textarea id="header" class="small" readonly></textarea></div><div><span class="label">Payload</span><textarea id="payload" class="small" readonly></textarea></div></div><div id="status" class="status"></div></div></main><footer><div class="container foot"><span>© 2026 DevToolBox · Fast, simple browser tools</span><span><a href="about.html">About</a> · <a href="privacy.html">Privacy</a></span></div></footer><script src="common.js"></script><script>$("#run").onclick=()=>{try{let p=$("#input").value.trim().split(".");if(p.length!==3)throw Error("JWT must contain 3 parts.");$("#header").value=JSON.stringify(JSON.parse(b64(p[0])),null,2);$("#payload").value=JSON.stringify(JSON.parse(b64(p[1])),null,2);status("Decoded locally. Signature was not verified.","success")}catch(e){status(e.message,"error")}};$("#sample").onclick=()=>{let h=btoa(JSON.stringify({alg:"none",typ:"JWT"})).replace(/=/g,''),p=btoa(JSON.stringify({sub:"123",name:"Demo",iat:Math.floor(Date.now()/1000)})).replace(/=/g,'');$("#input").value=h+"."+p+".";$("#run").click()};$("#clear").onclick=()=>{$("#input").value=$("#header").value=$("#payload").value='';status('')};</script></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script>(function(){try{var t=localStorage.getItem('dtb-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>JWT Decoder | DevToolBox</title><meta name="description" content="Decode JWT header and payload locally. Signature verification is not performed."><link rel="stylesheet" href="styles.css"></head><body><header class="header"><div class="container nav"><a class="brand" href="index.html"><span class="logo">&lt;/&gt;</span>DevToolBox</a><button class="navtoggle" id="navtoggle" aria-label="Menu">&#9776;</button><nav class="navlinks" id="navlinks"><a href="index.html">All Tools</a><a href="json-formatter.html">JSON</a><a href="hash-generator.html">Hash</a><a href="regex-tester.html">Regex</a><a href="about.html">About</a></nav><div class="navright"><button class="iconbtn" id="themeToggle" aria-label="Toggle theme" title="Toggle dark mode">&#9680;</button></div></div></header><div class="toolhead"><div><span class="eyebrow">FREE BROWSER TOOL</span><h1>JWT Decoder</h1><p>Decode JWT header and payload locally. Signature verification is not performed.</p></div></div><main class="container tool"><div class="panel"><div class="toolbar"><button id="run">Decode JWT</button><button class="secondary" id="sample">Sample</button><button class="secondary" id="clear">Clear</button></div><span class="label">JWT token</span><textarea id="input" class="small" placeholder="eyJ..."></textarea><div class="editor-grid" style="margin-top:15px"><div><span class="label">Header</span><textarea id="header" class="small" readonly></textarea></div><div><span class="label">Payload</span><textarea id="payload" class="small" readonly></textarea></div></div><div id="status" class="status"></div><div id="claims" class="stats"></div></div></main><footer><div class="container foot"><span>&copy; 2026 DevToolBox &middot; Fast, simple browser tools</span><span><a href="about.html">About</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="index.html">All tools</a></span></div></footer><script src="common.js"></script><script>
+function fmtTime(sec){if(sec==null)return null;let d=new Date(sec*1000);return isNaN(d.getTime())?null:d.toLocaleString()}
+$("#run").onclick=()=>{
+  try{
+    let p=$("#input").value.trim().split(".");
+    if(p.length!==3)throw Error("JWT must contain 3 parts separated by dots.");
+    let header=JSON.parse(b64(p[0])),payload=JSON.parse(b64(p[1]));
+    $("#header").value=JSON.stringify(header,null,2);
+    $("#payload").value=JSON.stringify(payload,null,2);
+    let bits=[];
+    if(header.alg)bits.push(`<span class="stat">alg: <b>${escapeHtml(header.alg)}</b></span>`);
+    if(payload.iat)bits.push(`<span class="stat">issued: <b>${fmtTime(payload.iat)}</b></span>`);
+    if(payload.exp){
+      let exp=fmtTime(payload.exp),expired=payload.exp*1000<Date.now();
+      bits.push(`<span class="stat">expires: <b>${exp}</b> ${expired?"(expired)":"(valid)"}</span>`);
+    }
+    $("#claims").innerHTML=bits.join("");
+    let warn=header.alg==="none"?" Warning: alg is \"none\" (unsigned).":"";
+    status("Decoded locally. Signature was not verified."+warn,"success");
+  }catch(e){$("#claims").innerHTML="";status(e.message,"error")}
+};
+$("#sample").onclick=()=>{
+  let now=Math.floor(Date.now()/1000);
+  let h=btoa(JSON.stringify({alg:"HS256",typ:"JWT"})).replace(/=/g,"");
+  let p=btoa(JSON.stringify({sub:"123",name:"Demo User",iat:now,exp:now+3600})).replace(/=/g,"");
+  $("#input").value=h+"."+p+".signature-not-verified";
+  $("#run").click();
+};
+$("#clear").onclick=()=>{$("#input").value=$("#header").value=$("#payload").value="";$("#claims").innerHTML="";status("")};
+</script></body></html>

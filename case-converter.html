@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script>(function(){try{var t=localStorage.getItem('dtb-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Case Converter | DevToolBox</title><meta name="description" content="Convert text between upper, lower, title, camel, snake, kebab and constant case."><link rel="stylesheet" href="styles.css"></head><body><header class="header"><div class="container nav"><a class="brand" href="index.html"><span class="logo">&lt;/&gt;</span>DevToolBox</a><button class="navtoggle" id="navtoggle" aria-label="Menu">&#9776;</button><nav class="navlinks" id="navlinks"><a href="index.html">All Tools</a><a href="json-formatter.html">JSON</a><a href="hash-generator.html">Hash</a><a href="regex-tester.html">Regex</a><a href="about.html">About</a></nav><div class="navright"><button class="iconbtn" id="themeToggle" aria-label="Toggle theme" title="Toggle dark mode">&#9680;</button></div></div></header><div class="toolhead"><div><span class="eyebrow">NEW · FREE BROWSER TOOL</span><h1>Case Converter</h1><p>Convert text between upper, lower, title, camel, snake, kebab and constant case.</p></div></div><main class="container tool"><div class="panel"><span class="label">Input text</span><textarea id="input" class="small" placeholder="DevToolBox makes developer tasks easy"></textarea><div class="toolbar" style="margin-top:12px"><button data-c="upper">UPPERCASE</button><button data-c="lower">lowercase</button><button data-c="title">Title Case</button><button data-c="sentence">Sentence case</button><button data-c="camel">camelCase</button><button data-c="pascal">PascalCase</button><button data-c="snake">snake_case</button><button data-c="kebab">kebab-case</button><button data-c="constant">CONSTANT_CASE</button></div><span class="label" style="margin-top:12px">Result</span><textarea id="output" class="small" readonly></textarea><div class="toolbar"><button class="secondary" id="copy">Copy</button></div><div id="status" class="status"></div></div></main><footer><div class="container foot"><span>&copy; 2026 DevToolBox &middot; Fast, simple browser tools</span><span><a href="about.html">About</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="index.html">All tools</a></span></div></footer><script src="common.js"></script><script>
+function words(s){return s.trim().split(/[\s_\-]+|(?<=[a-z0-9])(?=[A-Z])/).filter(Boolean)}
+const CONV={
+  upper:s=>s.toUpperCase(),
+  lower:s=>s.toLowerCase(),
+  title:s=>words(s).map(w=>w[0].toUpperCase()+w.slice(1).toLowerCase()).join(" "),
+  sentence:s=>{let l=s.toLowerCase().trim();return l?l[0].toUpperCase()+l.slice(1):l},
+  camel:s=>{let w=words(s).map(x=>x.toLowerCase());return w.map((x,i)=>i===0?x:x[0].toUpperCase()+x.slice(1)).join("")},
+  pascal:s=>words(s).map(x=>x[0].toUpperCase()+x.slice(1).toLowerCase()).join(""),
+  snake:s=>words(s).map(x=>x.toLowerCase()).join("_"),
+  kebab:s=>words(s).map(x=>x.toLowerCase()).join("-"),
+  constant:s=>words(s).map(x=>x.toUpperCase()).join("_"),
+};
+$$("[data-c]").forEach(b=>b.onclick=()=>{
+  let s=$("#input").value;
+  if(!s)return status("Type something first.","error");
+  $("#output").value=CONV[b.dataset.c](s);
+  status("Converted to "+b.textContent+".","success");
+});
+$("#copy").onclick=()=>copyText($("#output").value,$("#copy"));
+</script></body></html>

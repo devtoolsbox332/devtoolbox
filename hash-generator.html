@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script>(function(){try{var t=localStorage.getItem('dtb-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hash Generator | DevToolBox</title><meta name="description" content="Generate MD5, SHA-1, SHA-256, SHA-384 and SHA-512 hashes from text in your browser."><link rel="stylesheet" href="styles.css"></head><body><header class="header"><div class="container nav"><a class="brand" href="index.html"><span class="logo">&lt;/&gt;</span>DevToolBox</a><button class="navtoggle" id="navtoggle" aria-label="Menu">&#9776;</button><nav class="navlinks" id="navlinks"><a href="index.html">All Tools</a><a href="json-formatter.html">JSON</a><a href="hash-generator.html">Hash</a><a href="regex-tester.html">Regex</a><a href="about.html">About</a></nav><div class="navright"><button class="iconbtn" id="themeToggle" aria-label="Toggle theme" title="Toggle dark mode">&#9680;</button></div></div></header><div class="toolhead"><div><span class="eyebrow">NEW · FREE BROWSER TOOL</span><h1>Hash Generator</h1><p>Generate MD5, SHA-1, SHA-256, SHA-384 and SHA-512 hashes from text, entirely in your browser.</p></div></div><main class="container tool"><div class="panel"><div class="toolbar"><button id="run">Generate Hashes</button><button class="secondary" id="sample">Sample</button><button class="secondary" id="load">Open file</button><label class="checkrow"><input type="checkbox" id="upper"> Uppercase</label></div><span class="label">Input text</span><textarea id="input" class="small"></textarea><div id="status" class="status"></div><div id="results"></div></div></main><footer><div class="container foot"><span>&copy; 2026 DevToolBox &middot; Fast, simple browser tools</span><span><a href="about.html">About</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="index.html">All tools</a></span></div></footer><script src="common.js"></script><script>
+function md5(str){
+  function rotl(x,c){return (x<<c)|(x>>>(32-c))}
+  function toWords(s){
+    const bytes=new TextEncoder().encode(s);
+    const bitLen=bytes.length*8;
+    let withOne=new Uint8Array(Math.ceil((bytes.length+9)/64)*64);
+    withOne.set(bytes);withOne[bytes.length]=0x80;
+    const dv=new DataView(withOne.buffer);
+    dv.setUint32(withOne.length-8,bitLen>>>0,true);
+    dv.setUint32(withOne.length-4,Math.floor(bitLen/4294967296),true);
+    const words=[];
+    for(let i=0;i<withOne.length;i+=4)words.push(dv.getUint32(i,true));
+    return words;
+  }
+  const K=new Array(64);
+  for(let i=0;i<64;i++)K[i]=Math.floor(Math.abs(Math.sin(i+1))*4294967296);
+  const S=[7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,
+           5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,
+           4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,
+           6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+  let a0=0x67452301,b0=0xefcdab89,c0=0x98badcfe,d0=0x10325476;
+  const words=toWords(str);
+  for(let chunk=0;chunk<words.length;chunk+=16){
+    let A=a0,B=b0,C=c0,D=d0;
+    for(let i=0;i<64;i++){
+      let F,g;
+      if(i<16){F=(B&C)|(~B&D);g=i}
+      else if(i<32){F=(D&B)|(~D&C);g=(5*i+1)%16}
+      else if(i<48){F=B^C^D;g=(3*i+5)%16}
+      else{F=C^(B|~D);g=(7*i)%16}
+      F=(F+A+K[i]+words[chunk+g])>>>0;
+      A=D;D=C;C=B;
+      B=(B+rotl(F,S[i]))>>>0;
+    }
+    a0=(a0+A)>>>0;b0=(b0+B)>>>0;c0=(c0+C)>>>0;d0=(d0+D)>>>0;
+  }
+  function hexLE(n){
+    let bytes=[n&0xff,(n>>>8)&0xff,(n>>>16)&0xff,(n>>>24)&0xff];
+    return bytes.map(b=>b.toString(16).padStart(2,"0")).join("");
+  }
+  return hexLE(a0)+hexLE(b0)+hexLE(c0)+hexLE(d0);
+}
+async function subtleHex(algo,data){
+  let buf=await crypto.subtle.digest(algo,data);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+async function run(){
+  let text=$("#input").value,data=new TextEncoder().encode(text);
+  let up=$("#upper").checked;
+  let rows=[["MD5",md5(text)]];
+  for(const [label,algo] of [["SHA-1","SHA-1"],["SHA-256","SHA-256"],["SHA-384","SHA-384"],["SHA-512","SHA-512"]]){
+    rows.push([label,await subtleHex(algo,data)]);
+  }
+  if(up)rows=rows.map(([l,h])=>[l,h.toUpperCase()]);
+  $("#results").innerHTML=rows.map(([l,h])=>
+    `<div style="margin-top:12px"><span class="label">${l}</span><div class="result" style="margin-top:0;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <span style="word-break:break-all">${h}</span>
+      <button class="secondary" data-hash="${h}" style="flex-shrink:0">Copy</button>
+    </div></div>`
+  ).join("");
+  $$("[data-hash]").forEach(b=>b.onclick=()=>copyText(b.dataset.hash,b));
+  status("Hashes generated.","success");
+}
+$("#run").onclick=run;
+$("#upper").onchange=()=>{if($("#results").innerHTML)run()};
+$("#sample").onclick=()=>{$("#input").value="The quick brown fox jumps over the lazy dog";run()};
+$("#load").onclick=()=>loadFile(t=>{$("#input").value=t;run()});
+enableDrop($("#input"),t=>{$("#input").value=t;run()});
+</script></body></html>

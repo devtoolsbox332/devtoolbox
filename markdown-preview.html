@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script>(function(){try{var t=localStorage.getItem('dtb-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Markdown Previewer | DevToolBox</title><meta name="description" content="Write Markdown and see a live, sanitized HTML preview side by side."><link rel="stylesheet" href="styles.css"></head><body><header class="header"><div class="container nav"><a class="brand" href="index.html"><span class="logo">&lt;/&gt;</span>DevToolBox</a><button class="navtoggle" id="navtoggle" aria-label="Menu">&#9776;</button><nav class="navlinks" id="navlinks"><a href="index.html">All Tools</a><a href="json-formatter.html">JSON</a><a href="hash-generator.html">Hash</a><a href="regex-tester.html">Regex</a><a href="about.html">About</a></nav><div class="navright"><button class="iconbtn" id="themeToggle" aria-label="Toggle theme" title="Toggle dark mode">&#9680;</button></div></div></header><div class="toolhead"><div><span class="eyebrow">NEW · FREE BROWSER TOOL</span><h1>Markdown Previewer</h1><p>Write Markdown and see a live, sanitized HTML preview side by side.</p></div></div><main class="container tool"><div class="panel"><div class="toolbar"><button id="sample">Sample</button><button class="secondary" id="copy">Copy HTML</button></div><div class="editor-grid"><div><span class="label">Markdown</span><textarea id="input" placeholder="# Hello&#10;&#10;Write **markdown** here."></textarea></div><div><span class="label">Preview</span><div id="preview" class="result" style="min-height:420px;white-space:normal;font:15px/1.6 system-ui,sans-serif"></div></div></div><div id="status" class="status"></div></div></main><footer><div class="container foot"><span>&copy; 2026 DevToolBox &middot; Fast, simple browser tools</span><span><a href="about.html">About</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="index.html">All tools</a></span></div></footer><script src="common.js"></script><script>
+function mdToHtml(src){
+  let s=escapeHtml(src);
+  s=s.replace(/```([\s\S]*?)```/g,(_,c)=>`<pre><code>${c.trim()}</code></pre>`);
+  s=s.replace(/`([^`]+)`/g,"<code>$1</code>");
+  s=s.replace(/^######\s+(.*)$/gm,"<h6>$1</h6>").replace(/^#####\s+(.*)$/gm,"<h5>$1</h5>")
+     .replace(/^####\s+(.*)$/gm,"<h4>$1</h4>").replace(/^###\s+(.*)$/gm,"<h3>$1</h3>")
+     .replace(/^##\s+(.*)$/gm,"<h2>$1</h2>").replace(/^#\s+(.*)$/gm,"<h1>$1</h1>");
+  s=s.replace(/^&gt;\s?(.*)$/gm,"<blockquote>$1</blockquote>");
+  s=s.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/\*([^*]+)\*/g,"<i>$1</i>");
+  s=s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img alt="$1" src="$2" style="max-width:100%">');
+  s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s=s.split(/\n{2,}/).map(block=>{
+    let lines=block.split("\n");
+    if(lines.every(l=>/^\s*[-*]\s+/.test(l))&&lines.length)
+      return "<ul>"+lines.map(l=>`<li>${l.replace(/^\s*[-*]\s+/,"")}</li>`).join("")+"</ul>";
+    if(lines.every(l=>/^\s*\d+\.\s+/.test(l))&&lines.length)
+      return "<ol>"+lines.map(l=>`<li>${l.replace(/^\s*\d+\.\s+/,"")}</li>`).join("")+"</ol>";
+    if(/^<h\d|^<pre|^<blockquote/.test(block))return block;
+    return "<p>"+lines.join("<br>")+"</p>";
+  }).join("\n");
+  return s;
+}
+function render(){
+  let html=mdToHtml($("#input").value);
+  $("#preview").innerHTML=html||"<p style=\"color:var(--muted)\">Nothing to preview yet.</p>";
+  $("#preview").dataset.html=html;
+  status("Preview updated.","success");
+}
+$("#input").addEventListener("input",render);
+$("#sample").onclick=()=>{
+  $("#input").value="# DevToolBox\n\nA collection of **fast** browser tools for developers.\n\n## Features\n\n- No backend required\n- Works offline\n- *Simple* and clean\n\n> Everything runs locally in your browser.\n\n[Visit the homepage](index.html)";
+  render();
+};
+$("#copy").onclick=()=>copyText($("#preview").dataset.html||"",$("#copy"));
+render();
+</script></body></html>

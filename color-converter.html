@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script>(function(){try{var t=localStorage.getItem('dtb-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t)}catch(e){}})()</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Color Converter | DevToolBox</title><meta name="description" content="Convert between HEX, RGB and HSL, preview the color and generate a shade palette."><link rel="stylesheet" href="styles.css"></head><body><header class="header"><div class="container nav"><a class="brand" href="index.html"><span class="logo">&lt;/&gt;</span>DevToolBox</a><button class="navtoggle" id="navtoggle" aria-label="Menu">&#9776;</button><nav class="navlinks" id="navlinks"><a href="index.html">All Tools</a><a href="json-formatter.html">JSON</a><a href="hash-generator.html">Hash</a><a href="regex-tester.html">Regex</a><a href="about.html">About</a></nav><div class="navright"><button class="iconbtn" id="themeToggle" aria-label="Toggle theme" title="Toggle dark mode">&#9680;</button></div></div></header><div class="toolhead"><div><span class="eyebrow">NEW · FREE BROWSER TOOL</span><h1>Color Converter</h1><p>Convert between HEX, RGB and HSL, preview the color and generate a shade palette.</p></div></div><main class="container tool"><div class="panel"><div class="two"><div><span class="label">HEX</span><input id="hex" class="input" value="#4f46e5"></div><div><span class="label">Native picker</span><input id="picker" type="color" class="input" value="#4f46e5" style="height:44px;padding:4px"></div></div><div class="three" style="margin-top:12px"><div><span class="label">RGB</span><input id="rgb" class="input" placeholder="79, 70, 229"></div><div><span class="label">HSL</span><input id="hsl" class="input" placeholder="243, 75%, 59%"></div><div><span class="label">CSS name (best guess)</span><input id="named" class="input" readonly></div></div><div id="swatch" class="swatch"></div><span class="label">Shades</span><div id="palette" class="palette"></div><div id="status" class="status"></div></div></main><footer><div class="container foot"><span>&copy; 2026 DevToolBox &middot; Fast, simple browser tools</span><span><a href="about.html">About</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="index.html">All tools</a></span></div></footer><script src="common.js"></script><script>
+const NAMED={"#000000":"black","#ffffff":"white","#ff0000":"red","#00ff00":"lime","#0000ff":"blue","#ffff00":"yellow","#00ffff":"cyan","#ff00ff":"magenta","#808080":"gray","#ffa500":"orange","#800080":"purple","#008000":"green","#4f46e5":"indigo (approx)"};
+function clamp(n,a,b){return Math.min(b,Math.max(a,n))}
+function hexToRgb(h){
+  h=h.replace("#","").trim();
+  if(h.length===3)h=h.split("").map(c=>c+c).join("");
+  if(!/^[0-9a-f]{6}$/i.test(h))throw Error("Enter a valid hex color like #4f46e5.");
+  return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
+}
+function rgbToHex(r,g,b){return "#"+[r,g,b].map(x=>clamp(Math.round(x),0,255).toString(16).padStart(2,"0")).join("")}
+function rgbToHsl(r,g,b){
+  r/=255;g/=255;b/=255;
+  let max=Math.max(r,g,b),min=Math.min(r,g,b),h,s,l=(max+min)/2;
+  if(max===min){h=s=0}
+  else{
+    let d=max-min;
+    s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;default:h=(r-g)/d+4}
+    h*=60;
+  }
+  return [Math.round(h),Math.round(s*100),Math.round(l*100)];
+}
+function hslToRgb(h,s,l){
+  h/=360;s/=100;l/=100;
+  let r,g,b;
+  if(s===0){r=g=b=l}
+  else{
+    const hue2rgb=(p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p};
+    let q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q;
+    r=hue2rgb(p,q,h+1/3);g=hue2rgb(p,q,h);b=hue2rgb(p,q,h-1/3);
+  }
+  return [r,g,b].map(x=>Math.round(x*255));
+}
+function render(hex){
+  let [r,g,b]=hexToRgb(hex);
+  let [h,s,l]=rgbToHsl(r,g,b);
+  $("#hex").value=hex;
+  $("#rgb").value=`${r}, ${g}, ${b}`;
+  $("#hsl").value=`${h}, ${s}%, ${l}%`;
+  $("#picker").value=hex;
+  $("#named").value=NAMED[hex.toLowerCase()]||"(no exact match)";
+  $("#swatch").style.background=hex;
+  let shades=[-40,-20,0,20,40].map(delta=>{
+    let nl=clamp(l+delta,0,100);
+    let [rr,gg,bb]=hslToRgb(h,s,nl);
+    return rgbToHex(rr,gg,bb);
+  });
+  $("#palette").innerHTML=shades.map(c=>`<div style="background:${c}" data-c="${c}" title="${c}"></div>`).join("");
+  $$("#palette div").forEach(d=>d.onclick=()=>{navigator.clipboard?.writeText(d.dataset.c);status("Copied "+d.dataset.c,"success")});
+  status("Converted.","success");
+}
+$("#hex").onchange=()=>{try{render($("#hex").value)}catch(e){status(e.message,"error")}};
+$("#picker").oninput=()=>render($("#picker").value);
+$("#rgb").onchange=()=>{
+  try{
+    let parts=$("#rgb").value.split(",").map(x=>parseInt(x.trim(),10));
+    if(parts.length!==3||parts.some(isNaN))throw Error("Enter RGB as: 79, 70, 229");
+    render(rgbToHex(...parts));
+  }catch(e){status(e.message,"error")}
+};
+$("#hsl").onchange=()=>{
+  try{
+    let m=$("#hsl").value.match(/(-?\d+)[,\s]+(\d+)%?[,\s]+(\d+)%?/);
+    if(!m)throw Error("Enter HSL as: 243, 75%, 59%");
+    let [r,g,b]=hslToRgb(+m[1],+m[2],+m[3]);
+    render(rgbToHex(r,g,b));
+  }catch(e){status(e.message,"error")}
+};
+render("#4f46e5");
+</script></body></html>
